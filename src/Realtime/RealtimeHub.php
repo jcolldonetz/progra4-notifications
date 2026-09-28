@@ -72,6 +72,10 @@ final class RealtimeHub implements MessageComponentInterface
     public function onClose(ConnectionInterface $conn): void
     {
         $this->connections->detach($conn);
+        error_log(sprintf(
+            '[realtime] Cliente desconectado. Conectados: %d',
+            $this->connections->count(),
+        ));
     }
 
     public function onError(ConnectionInterface $conn, \Exception $e): void

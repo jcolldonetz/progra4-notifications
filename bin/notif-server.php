@@ -10,6 +10,7 @@ use Ratchet\Http\HttpServer;
 use Ratchet\Server\IoServer;
 use Ratchet\WebSocket\WsServer;
 use React\EventLoop\Loop;
+use React\Socket\Connector;
 use React\Socket\SocketServer;
 
 /*
@@ -63,7 +64,13 @@ $loop = Loop::get();
 $jwt = new JwtVerifier($secret);
 $hub = new RealtimeHub($jwt, $allowedOrigins);
 
-$redis = (new Factory($loop))->createLazyClient($redisUrl);
+// Connector SIN resolución DNS (dns => false): nos conectamos a una IP
+// (127.0.0.1:6379) y así evitamos el DnsConfig de React, que en Windows
+// ejecuta "wmic NICCONFIG ..." (wmic ya no existe en Windows 11 y el shell
+// se queja feo en la consola).
+$connector = new Connector(['dns' => false, 'timeout' => 5], $loop);
+
+$redis = (new Factory($loop, $connector))->createLazyClient($redisUrl);
 (new RedisBridge($redis, $hub, 'items.stock'))->start();
 
 $socket = new SocketServer(sprintf('%s:%d', $wsHost, $wsPort), [], $loop);
